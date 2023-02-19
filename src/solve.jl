@@ -18,7 +18,7 @@ function CTDirectShooting.solve(
     grid::Union{Nothing,TimesDisc}=nothing,
     penalty_constraint::Real=__penalty_constraint(),
     display::Bool=__display(),
-    callbacks::ControlToolboxCallbacks=__callbacks(),
+    callbacks::CTCallbacks=__callbacks(),
     init_interpolation::Function=__init_interpolation(),
     kwargs...
 )

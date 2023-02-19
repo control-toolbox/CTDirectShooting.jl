@@ -13,19 +13,12 @@ using Printf # to print iterations results for instance
 using Plots
 import Plots: plot, plot! # import instead of using to overload the plot and plot! functions
 
-# tools: Descriptions, callbacks, exceptions, functions and more
-using ControlToolboxTools
-const ControlToolboxCallbacks = Tuple{Vararg{ControlToolboxCallback}} # todo: handle this better
-
 # flows
 using HamiltonianFlows
 
 # nlp solvers
 using CTOptimization
-import CTOptimization: solve
-
-# Types
-const MyNumber, MyVector, Time, Times, TimesDisc, States, Adjoints, Controls, State, Adjoint, Dimension = CTBase.types()
+import CTOptimization: solve #todo: remove this
 
 # Other declarations
 const nlp_constraints = CTBase.nlp_constraints

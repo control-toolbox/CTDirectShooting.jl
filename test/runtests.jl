@@ -2,7 +2,6 @@ using CTDirectShooting
 using Test
 using CTBase
 using CTProblemLibrary
-using ControlToolboxTools
 using Plots
 
 # CTDirectShooting
