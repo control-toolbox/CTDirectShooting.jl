@@ -1,3 +1,21 @@
+
+# ------------------------------------------------------------------------------------
+# Direct shooting solution
+#
+struct DirectShootingSolution <: AbstractOptimalControlSolution
+    T::TimesDisc # the times
+    X::States # the states at the times T
+    U::Controls # the controls at T
+    P::Adjoints # the adjoint at T
+    objective::MyNumber
+    state_dimension::Dimension # the dimension of the state
+    control_dimension::Dimension # the dimension of the control
+    stopping::Symbol # the stopping criterion
+    message::String # the message corresponding to the stopping criterion
+    success::Bool # whether or not the method has finished successfully: CN1, stagnation vs iterations max
+    iterations::Integer # the number of iterations
+end
+
 function DirectShootingSolution(sol::CTOptimization.UnconstrainedSolution,
     ocp::OptimalControlModel, grid::TimesDisc, penalty_constraint::Real)
 
@@ -42,7 +60,30 @@ function DirectShootingSolution(sol::CTOptimization.UnconstrainedSolution,
     end
     objective = J(U⁺)
 
-    return CTBase.DirectShootingSolution(T, X⁺, U⁺, P⁺, objective, n, m, 
+    dssol = DirectShootingSolution(T, X⁺, U⁺, P⁺, objective, n, m, 
         sol.stopping, sol.message, sol.success, sol.iterations)
    
+    return _OptimalControlSolution(ocp, dssol)
+
+end
+
+function _OptimalControlSolution(ocp::OptimalControlModel, dssol::DirectShootingSolution)
+    x = ctinterpolate(dssol.T, dssol.X) # je ne peux pas donner directement la sortie de ctinterpolate car ce n'est pas une Function
+    u = ctinterpolate(dssol.T[1:end-1], dssol.U)
+    p = ctinterpolate(dssol.T, dssol.P)
+    sol = OptimalControlSolution()
+    sol.state_dimension = dssol.state_dimension
+    sol.control_dimension = dssol.control_dimension
+    sol.times = dssol.T
+    sol.state = t -> x(t)
+    sol.state_labels = ocp.state_labels # update CTBase to have a getter
+    sol.adjoint = t -> p(t)
+    sol.control = t -> u(t)
+    sol.control_labels = ocp.control_labels
+    sol.objective = dssol.objective
+    sol.iterations = dssol.iterations
+    sol.stopping = dssol.stopping
+    sol.message = dssol.message
+    sol.success = dssol.success
+    return sol
 end

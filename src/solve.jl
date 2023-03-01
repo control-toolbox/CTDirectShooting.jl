@@ -14,7 +14,7 @@ algorithmes = add(algorithmes, (:descent, :gradient, :fixedstep))
 function CTDirectShooting.solve(
     ocp::OptimalControlModel,
     description...;
-    init::Union{Nothing,Controls,Tuple{TimesDisc,Controls},Function,DirectShootingSolution,DirectSolution}=nothing,
+    init::Union{Nothing,Controls,Tuple{TimesDisc,Controls},Function,OptimalControlSolution}=nothing,
     grid::Union{Nothing,TimesDisc}=nothing,
     penalty_constraint::Real=__penalty_constraint(),
     display::Bool=__display(),

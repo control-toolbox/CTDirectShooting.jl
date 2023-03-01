@@ -3,7 +3,7 @@ prob = Problem(:integrator, :dim2, :energy)
 ocp = prob.model
 
 # solution
-u_sol(t) = prob.solution.control_function(t)[1]
+u_sol(t) = prob.solution.control(t)[1]
 
 #
 t0 = initial_time(ocp)
@@ -137,16 +137,13 @@ u_init(t) = [u_sol(t)-1.0]
 
 # resolution with different init
 common_args = (iterations=5, display=false)
-sol = CTDirectShooting.solve(ocp, :descent, init=nothing, grid=nothing; common_args...); @test typeof(sol) == DirectShootingSolution;
-sol = CTDirectShooting.solve(ocp, :descent, init=nothing, grid=T; common_args...); @test typeof(sol) == DirectShootingSolution;
-sol = CTDirectShooting.solve(ocp, :descent, init=U, grid=nothing; common_args...); @test typeof(sol) == DirectShootingSolution;
-sol = CTDirectShooting.solve(ocp, :descent, init=U, grid=T; common_args...); @test typeof(sol) == DirectShootingSolution;
-sol = CTDirectShooting.solve(ocp, :descent, init=(T,U), grid=nothing; common_args...); @test typeof(sol) == DirectShootingSolution;
-sol = CTDirectShooting.solve(ocp, :descent, init=(T,U), grid=T_; common_args...); @test typeof(sol) == DirectShootingSolution;
-sol = CTDirectShooting.solve(ocp, :descent, init=sol, grid=nothing; common_args...); @test typeof(sol) == DirectShootingSolution;
-sol = CTDirectShooting.solve(ocp, :descent, init=u_init, grid=nothing; common_args...); @test typeof(sol) == DirectShootingSolution;
-sol = CTDirectShooting.solve(ocp, :descent, init=u_init, grid=T; common_args...); @test typeof(sol) == DirectShootingSolution;
-
-# plots
-@test typeof(plot(sol)) == Plots.Plot{Plots.GRBackend}
-@test typeof(plot(sol, :time, (:control, 1))) == Plots.Plot{Plots.GRBackend}
+sol = CTDirectShooting.solve(ocp, :descent, init=nothing, grid=nothing; common_args...); @test typeof(sol) == OptimalControlSolution;
+sol = CTDirectShooting.solve(ocp, :descent, init=nothing, grid=T; common_args...); @test typeof(sol) == OptimalControlSolution;
+sol = CTDirectShooting.solve(ocp, :descent, init=U, grid=nothing; common_args...); @test typeof(sol) == OptimalControlSolution;
+sol = CTDirectShooting.solve(ocp, :descent, init=U, grid=T; common_args...); @test typeof(sol) == OptimalControlSolution;
+sol = CTDirectShooting.solve(ocp, :descent, init=(T,U), grid=nothing; common_args...); @test typeof(sol) == OptimalControlSolution;
+sol = CTDirectShooting.solve(ocp, :descent, init=(T,U), grid=T_; common_args...); @test typeof(sol) == OptimalControlSolution;
+sol = CTDirectShooting.solve(ocp, :descent, init=sol, grid=nothing; common_args...); @test typeof(sol) == OptimalControlSolution;
+sol = CTDirectShooting.solve(ocp, :descent, init=sol, grid=T; common_args...); @test typeof(sol) == OptimalControlSolution;
+sol = CTDirectShooting.solve(ocp, :descent, init=u_init, grid=nothing; common_args...); @test typeof(sol) == OptimalControlSolution;
+sol = CTDirectShooting.solve(ocp, :descent, init=u_init, grid=T; common_args...); @test typeof(sol) == OptimalControlSolution;

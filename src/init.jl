@@ -122,13 +122,8 @@ function CTOptimizationInit(t0::Time, tf::Time, m::Dimension, init::Tuple{TimesD
 end
 
 # 
-function CTOptimizationInit(t0::Time, tf::Time, m::Dimension, S::DirectShootingSolution, grid, interp::Function)
-    return CTOptimizationInit(t0, tf, m, (time_steps(S), control(S)), grid, interp)
-end
-
-# 
-function CTOptimizationInit(t0::Time, tf::Time, m::Dimension, S::DirectSolution, grid, interp::Function)
-    return CTOptimizationInit(t0, tf, m, (time_steps(S), control(S)), grid, interp)
+function CTOptimizationInit(t0::Time, tf::Time, m::Dimension, S::OptimalControlSolution, grid, interp::Function)
+    return CTOptimizationInit(t0, tf, m, control(S), grid, interp)
 end
 
 #

@@ -3,22 +3,17 @@ module CTDirectShooting
 # using
 #
 using CTBase
-import CTBase: DirectShootingSolution
 
 #
 using LinearAlgebra # for the norm for instance
 using Printf # to print iterations results for instance
-
-# todo: use RecipesBase instead of plot
-using Plots
-import Plots: plot, plot! # import instead of using to overload the plot and plot! functions
 
 # flows
 using HamiltonianFlows
 
 # nlp solvers
 using CTOptimization
-import CTOptimization: solve #todo: remove this
+#import CTOptimization: solve #todo: remove this
 
 # Other declarations
 const nlp_constraints = CTBase.nlp_constraints
@@ -31,21 +26,17 @@ const __iterations = CTBase.__iterations
 const __absoluteTolerance = CTBase.__absoluteTolerance
 const __optimalityTolerance = CTBase.__optimalityTolerance
 const __stagnationTolerance = CTBase.__stagnationTolerance
-const ctgradient = CTBase.ctgradient
-const ctjacobian = CTBase.ctjacobian
 const expand = CTBase.expand
 const vec2vec = CTBase.vec2vec
 
 # includes
-include("init.jl")
 include("utils.jl")
+include("init.jl")
 include("problem.jl")
-include("solve.jl")
 include("solution.jl")
-include("plot.jl")
+include("solve.jl")
 
 # export functions only for user
 export solve
-export plot, plot!
 
 end
