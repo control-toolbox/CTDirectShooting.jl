@@ -4,12 +4,35 @@
 function parse_ocp_direct_shooting(ocp::OptimalControlModel)
 
     # parsing ocp
-    dy = dynamics(ocp)
-    co = lagrange(ocp)
-    cf = final_constraint(ocp)
-    x0 = initial_condition(ocp)
-    n = state_dimension(ocp)
-    m = control_dimension(ocp)
+    dy = ocp.dynamics
+    co = ocp.lagrange
+    n = ocp.state_dimension
+    m = ocp.control_dimension
+
+    # initial_condition and final_constraint
+    # x0 = ocp.initial_condition
+    # cf = ocp.final_constraint
+    x0 = nothing
+    cf = nothing
+    constraints = ocp.constraints
+    for (_, c) ∈ constraints
+        @match c begin
+        (:initial, _, f, lb, ub) => begin
+            if lb ≠ ub 
+                error("direct shooting is implemented for problems with initial condition")
+            else
+                x0 = lb
+            end
+            end
+        (:final, _, f, lb, ub) => begin
+            if lb ≠ ub 
+                error("direct shooting is implemented for problems with final equality constraint")
+            else
+                cf = x -> f(x) - lb
+            end
+            end
+	    end # match
+    end # for
 
     return dy, co, cf, x0, n, m
 

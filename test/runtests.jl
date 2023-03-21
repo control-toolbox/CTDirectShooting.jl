@@ -1,7 +1,7 @@
 using CTDirectShooting
 using Test
 using CTBase
-using CTProblemLibrary
+using CTProblems
 
 # CTDirectShooting
 const CTOptimizationInit = CTDirectShooting.CTOptimizationInit

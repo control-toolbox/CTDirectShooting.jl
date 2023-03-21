@@ -123,7 +123,7 @@ end
 
 # 
 function CTOptimizationInit(t0::Time, tf::Time, m::Dimension, S::OptimalControlSolution, grid, interp::Function)
-    return CTOptimizationInit(t0, tf, m, control(S), grid, interp)
+    return CTOptimizationInit(t0, tf, m, S.control, grid, interp)
 end
 
 #

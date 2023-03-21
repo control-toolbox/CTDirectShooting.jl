@@ -1,19 +1,12 @@
 module CTDirectShooting
 
-# using
 #
 using CTBase
-
-#
-using LinearAlgebra # for the norm for instance
-using Printf # to print iterations results for instance
-
-# flows
-using HamiltonianFlows
-
-# nlp solvers
+using CTFlows
 using CTOptimization
-#import CTOptimization: solve #todo: remove this
+using LinearAlgebra # for the norm for instance
+using MLStyle
+using Printf # to print iterations results for instance
 
 # Other declarations
 const nlp_constraints = CTBase.nlp_constraints
@@ -29,7 +22,7 @@ const __stagnationTolerance = CTBase.__stagnationTolerance
 const expand = CTBase.expand
 const vec2vec = CTBase.vec2vec
 
-# includes
+#
 include("utils.jl")
 include("init.jl")
 include("problem.jl")

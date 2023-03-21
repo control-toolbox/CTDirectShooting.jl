@@ -1,4 +1,3 @@
-
 # ------------------------------------------------------------------------------------
 # Direct shooting solution
 #
@@ -75,6 +74,7 @@ function _OptimalControlSolution(ocp::OptimalControlModel, dssol::DirectShooting
     sol.state_dimension = dssol.state_dimension
     sol.control_dimension = dssol.control_dimension
     sol.times = dssol.T
+    sol.time_label = ocp.time_label
     sol.state = t -> x(t)
     sol.state_labels = ocp.state_labels # update CTBase to have a getter
     sol.adjoint = t -> p(t)

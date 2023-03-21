@@ -51,9 +51,9 @@ function CTDirectShooting.solve(
     end
 
     # Init - need some parsing
-    t0 = initial_time(ocp)
-    tf = final_time(ocp)
-    m  = control_dimension(ocp)
+    t0 = ocp.initial_time
+    tf = ocp.final_time
+    m  = ocp.control_dimension
     opti_init, grid = CTOptimizationInit(t0, tf, m, init, grid, init_interpolation)
 
     # Problem

@@ -6,9 +6,9 @@ ocp = prob.model
 u_sol(t) = prob.solution.control(t)[1]
 
 #
-t0 = initial_time(ocp)
-tf = final_time(ocp)
-m  = control_dimension(ocp)
+t0 = ocp.initial_time
+tf = ocp.final_time
+m  = ocp.control_dimension
 
 # --------------------------------------------------------------------------------------------------
 #
