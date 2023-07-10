@@ -1,21 +1,6 @@
 name = "CTDirectShooting"
 uuid = "e0e6c04b-5022-4cd2-bea2-4a09fff39444"
-authors = ["Olivier Cots <olivier.cots@enseeiht.fr>"]
-version = "0.1.4"
 
 [deps]
-CTBase = "54762871-cc72-4466-b8e8-f6c8b58076cd"
-CTFlows = "1c39547c-7794-42f7-af83-d98194f657c2"
-CTOptimization = "22f08de8-270f-4470-8fba-397dbc90d8e0"
-LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
-MLStyle = "d8e11817-5142-5d16-987a-aa16d5891078"
-Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 
 [compat]
-CTBase = "0.5"
-CTFlows = "0.2"
-CTOptimization = "0.1"
-LinearAlgebra = "1.8"
-MLStyle = "0.4"
-Printf = "1.8"
-julia = "1.8"
