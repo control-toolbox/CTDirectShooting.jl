@@ -2,5 +2,5 @@ name = "CTDirectShooting"
 uuid = "e0e6c04b-5022-4cd2-bea2-4a09fff39444"
 
 [deps]
-
-[compat]
+ADNLPModels = "54578032-b7ea-4c30-94aa-7cbd1cce6c9a"
+CTFlows = "1c39547c-7794-42f7-af83-d98194f657c2"

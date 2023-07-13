@@ -13,8 +13,9 @@ struct SimpleProblem
     bmin::Vector{} # lower bound boundary conditions (t0, x(t0), tf, x(tf))
     b::Function # boundary conditions function (t0, x(t0), tf, x(tf), var)
     bmax::Vector{} # upper bound boundary conditions (t0, x(t0), tf, x(tf))
+    l::Function
 
-    function SimpleProblem(g::Function, f⁰::Function, f::Function, dmin::Vector{}, dmax::Vector{}, cmin::Vector{}, c::Function, cmax::Vector{}, bmin::Vector{}, b::Function, bmax::Vector{})
+    function SimpleProblem(g::Function, f⁰::Function, f::Function, dmin::Vector{}, dmax::Vector{}, cmin::Vector{}, c::Function, cmax::Vector{}, bmin::Vector{}, b::Function, bmax::Vector{}, l::Function=(β->β))
 
         
         @assert size(dmin) == size(dmax) 
@@ -24,8 +25,17 @@ struct SimpleProblem
         @assert size(bmin) == size(bmax) 
         #@assert typeof(bmin) == typeof(bmax) 
     
-        return new(g::Function, f⁰::Function, f::Function, dmin::Vector{}, dmax::Vector{}, cmin::Vector{}, c::Function, cmax::Vector{}, bmin::Vector{}, b::Function, bmax::Vector{})
-    
+        return new(g::Function, f⁰::Function, f::Function, dmin::Vector{}, dmax::Vector{}, cmin::Vector{}, c::Function, cmax::Vector{}, bmin::Vector{}, b::Function, bmax::Vector{}, l::Function)
+    end 
+end
+
+struct BoundaryFreedom
+    t0::Bool
+    x0::Bool
+    tf::Bool
+    xf::Bool
+    function BoundaryFreedom(prob::SimpleProblem)
+        bv = prob.bmin .!= prob.bmax
+        return new(bv[1], bv[2] && bv[3], bv[4], bv[5] && bv[6])
     end
-    
 end

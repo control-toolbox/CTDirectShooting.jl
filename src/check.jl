@@ -1,0 +1,1 @@
+_check_grids(N,M) = !(N%M == 0) && throw(IncorrectArguments("Grids size must be coherent i.e. M divise N."))
