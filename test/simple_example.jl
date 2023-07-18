@@ -1,7 +1,8 @@
 using CTDirectShooting
 using CTFlows
 using ADNLPModels
-using NLPModelsIpopt
+using NLPModelsIpopt 
+using OrdinaryDiffEq
 
 function solve_example()
     # the problem (double integrator time control constraint)
@@ -22,9 +23,10 @@ function solve_example()
     b(t0, x0, tf, xf) = [t0, x0, tf, xf]
     bmax = [0, -1, 0, Inf, 0, 0]
 
-    prob = SimpleProblem(g, f⁰, f, dmin, dmax, cmin, c, cmax, bmin, b, bmax)
+    prob = SimpleProblem(g, f⁰, f, dmin, dmax, cmin, c, cmax, bmin, b, bmax, 2, 1)
 
     # solving 
+    ff(x,u,t) = f(x,u)
     fv(v) = [f(v[1:2],v[3]);0]
     tf = t0+1
     N = 9
@@ -83,6 +85,7 @@ function solve_example()
         offset = 6
         j = 1
         fx = Flow(f,variable=true)
+        fvx = Flow(fv,autonomous=true,variable=false)
         buff = []
         X̃ = zeros(2*3)
         for (k,j) ∈ enumerate(J)
@@ -100,7 +103,10 @@ function solve_example()
                     else
                         x_start = X̃[2(i-1)-1:2(i-1)] # view(X̃,2(i-1)-1:2(i-1)) #
                     end
-                    println(typeof(x_start))
+                    # tspan = (unk[j+i],unk[j+i+1])
+                    # prob = ODEProblem(ff,x_start,tspan,unk[N+1 + 2*M + (i+j == N+1 ? i+j-1 : i + j)])
+                    # sol = solve(prob,Tsit5())
+                    # println(sol.u[end])
                     X̃[2i-1:2i] = fx(unk[j+i],x_start,unk[N+1 + 2*M + (i+j == N+1 ? i+j-1 : i + j)],unk[j+i+1]) 
                     #X̃[2i-1:2i] = fvx(unk[j+i],[x_start; unk[N+1 + 2*M + (i+j == N+1 ? i+j-1 : i + j)]],unk[j+i+1])[1:2]
                 end

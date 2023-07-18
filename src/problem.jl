@@ -13,9 +13,11 @@ struct SimpleProblem
     bmin::Vector{} # lower bound boundary conditions (t0, x(t0), tf, x(tf))
     b::Function # boundary conditions function (t0, x(t0), tf, x(tf), var)
     bmax::Vector{} # upper bound boundary conditions (t0, x(t0), tf, x(tf))
-    l::Function
+    state_dim::Int64
+    control_dim::Int64
+    l::Function # function to control u wrt β
 
-    function SimpleProblem(g::Function, f⁰::Function, f::Function, dmin::Vector{}, dmax::Vector{}, cmin::Vector{}, c::Function, cmax::Vector{}, bmin::Vector{}, b::Function, bmax::Vector{}, l::Function=(β->β))
+    function SimpleProblem(g::Function, f⁰::Function, f::Function, dmin::Vector{}, dmax::Vector{}, cmin::Vector{}, c::Function, cmax::Vector{}, bmin::Vector{}, b::Function, bmax::Vector{}, state_dim::Int64, control_dim::Int64, l::Function=(β->β))
 
         
         @assert size(dmin) == size(dmax) 
@@ -25,7 +27,7 @@ struct SimpleProblem
         @assert size(bmin) == size(bmax) 
         #@assert typeof(bmin) == typeof(bmax) 
     
-        return new(g::Function, f⁰::Function, f::Function, dmin::Vector{}, dmax::Vector{}, cmin::Vector{}, c::Function, cmax::Vector{}, bmin::Vector{}, b::Function, bmax::Vector{}, l::Function)
+        return new(g::Function, f⁰::Function, f::Function, dmin::Vector{}, dmax::Vector{}, cmin::Vector{}, c::Function, cmax::Vector{}, bmin::Vector{}, b::Function, bmax::Vector{}, state_dim::Int64, control_dim::Int64, l::Function)
     end 
 end
 

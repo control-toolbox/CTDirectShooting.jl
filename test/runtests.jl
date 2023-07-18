@@ -6,11 +6,17 @@ using Test
 
 #
 @testset verbose = true showtiming = true "Direct shooting" begin
-    for name in (
+    for name ∈ (
+        :init,
+        :utils,
+        :solve,
+        :problem,
          # unconstrained direct simple shooting
         )
-        @testset "$name" begin
-            include("test_$name.jl")
+        @testset "$(name)" begin
+            test_name = Symbol(:test_, name)
+            include("$(test_name).jl")
+            @eval $test_name()
         end
     end
 end
