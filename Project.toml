@@ -1,7 +1,7 @@
 name = "CTDirectShooting"
 uuid = "e0e6c04b-5022-4cd2-bea2-4a09fff39444"
 authors = ["Olivier Cots <olivier.cots@enseeiht.fr>"]
-version = "0.1.4"
+version = "0.1.5"
 
 [deps]
 CTBase = "54762871-cc72-4466-b8e8-f6c8b58076cd"
