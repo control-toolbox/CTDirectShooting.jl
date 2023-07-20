@@ -1,0 +1,3 @@
+var documenterSearchIndex = {"docs":
+[{"location":"index.html#CTDirectShooting.jl","page":"Introduction","title":"CTDirectShooting.jl","text":"","category":"section"},{"location":"index.html","page":"Introduction","title":"Introduction","text":"The CTProblems.jl package is part of the control-toolbox ecosystem.","category":"page"},{"location":"index.html","page":"Introduction","title":"Introduction","text":"note: Install\nTo install a package from the control-toolbox ecosystem,  please visit the installation page.","category":"page"},{"location":"index.html","page":"Introduction","title":"Introduction","text":"This package is under development.","category":"page"}]
+}
