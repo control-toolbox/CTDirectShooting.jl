@@ -1,12 +1,11 @@
 using Documenter
-using CTDirectShooting
+#using CTDirectShooting
 
 makedocs(
     sitename = "CTDirectShooting.jl",
     format = Documenter.HTML(prettyurls = false),
     pages = [
         "Introduction" => "index.md",
-        "API" => "api.md"
     ]
 )
 
