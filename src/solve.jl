@@ -3,30 +3,36 @@ function solve(prob::SimpleProblem, N::Int64=9, M::Int64=N÷3) #problem without 
     # checking
     _check_grids(N,M)
 
-    # transform functions for scalar/vectors
-    dyn(x,u) = size(u) == 1 ? prob.f(x,u[1]) : prob.f(x,u)
+    function u(β,i) 
+        if i*prob.control_dim ≤ size(β,1)
+            val = prob.l(β[prob.control_dim*(i-1)+1:prob.control_dim*i])
+        else
+            val = prob.l(β[prob.control_dim*(i-2)+1:prob.control_dim*(i-1)])
+        end
+        return size(val,1) == 1 ? Float64(val[1]) : Vector{Float64}(val)  
+    end
 
-    boundary_freedom = BoundaryFreedom(prob)
-
-    #u(β,i) = i*prob.control_dim ≤ size(β,1) ? prob.l(β[prob.control_dim*(i-1)+1:prob.control_dim*i]) : prob.l(β[prob.control_dim*(i-2)+1:prob.control_dim*(i-1)]) # picewise constant !! DIM 1 /other todo
-    u(β,i) = i ≤ size(β,1) ? prob.l(β[i]) : prob.l(β[i-1]) # picewise constant !! DIM 1 /other todo
-
+    # make the dynamics in-place TODO
+    function f!(dx::Vector{T},x::Vector{T},u,t) where T<:Real
+        dx[1] = x[2]
+        dx[2] = u
+    end
 
     I = [i for i ∈ 0:N]
     J = I[1:3:size(I,1)]
     
     # unknowns are (tᵢ)[0:N=I], (xⱼ)[J], (βᵢ)[0:N-1], obj, var)  := unk
-    obj_fun(unk) = unk[N+1+M+N+1] + norm(get_times(unk).-get_times_uniform(prob)) # obj + tᵢ constraints
+    obj_fun(unk::Vector{<:Real}) = unk[N+1+prob.state_dim*M+prob.control_dim*N+1] + norm(get_times(unk,N).-get_times_uniform(prob,N)) # obj + tᵢ constraints
     
-    dim_unk =  N+1 + 2*M + 1*N + 1 + 0 # tᵢ + xⱼ + βᵢ + F + λ
+    dim_unk =  N+1 + prob.state_dim*M + prob.control_dim*N + 1 + 0 # tᵢ + xⱼ + βᵢ + F + λ
     
-    unk0 = _init_vector(dim_unk,0.5)
+    unk0 = _init_vector(N,0.5,dim_unk) #ones(Real,dim_unk)#
 
-    l_var = -Inf*ones(dim_unk)
-    u_var = Inf*ones(dim_unk)
+    l_var = Vector{Real}(-Inf*ones(Real,dim_unk))
+    u_var = Vector{Real}(Inf*ones(Real,dim_unk))
     for i ∈ 1:dim_unk # variable bounds
         if i ≤ N+1 # tᵢ constraints
-            l_var[i] = 0
+            l_var[i] = 0.0
             u_var[i] = Inf
         end
     end
@@ -34,8 +40,8 @@ function solve(prob::SimpleProblem, N::Int64=9, M::Int64=N÷3) #problem without 
     # the vector of constraint is :  t0,x0,tf,xf,
     dim_con = 2*(1 + prob.state_dim) + M*prob.state_dim + (N+1)*(prob.state_dim + prob.control_dim) 
 
-    lb = zeros(dim_con)
-    ub = zeros(dim_con)
+    lb = zeros(Real, dim_con)
+    ub = zeros(Real, dim_con)
     lb[1:2*(1 + prob.state_dim)] = prob.bmin
     ub[1:2*(1 + prob.state_dim)] = prob.bmax
     offset = 2*(1 + prob.state_dim) + M*prob.state_dim
@@ -51,12 +57,13 @@ function solve(prob::SimpleProblem, N::Int64=9, M::Int64=N÷3) #problem without 
         end
     end
 
-    function con_fun(c, unk)
-        offset = 2*(1 + prob.state_dim) + M*prob.state_dim
+    function con_fun(c::Vector{<:Real}, unk::Vector{<:Real})
+        offset = 2*(1 + prob.state_dim)
         j = 1
-        fx = Flow(prob.f, variable=true)
+        fx = Flow(prob.f, autonomous=false, variable=true)
         buff = []
         X̃ = zeros(prob.state_dim*3) # 3 is the number of state between to j
+        β = get_parameters(unk,prob.state_dim,prob.control_dim,N,M)#view(unk,N+1+prob.state_dim*M+1:N+1+prob.state_dim*M+N)
         for (k,j) ∈ enumerate(J)
             if k == 1
                 c[offset+1:offset+prob.state_dim] = zeros(prob.state_dim) #x₀ = x̃₀
@@ -67,30 +74,45 @@ function solve(prob::SimpleProblem, N::Int64=9, M::Int64=N÷3) #problem without 
             end
             if j < J[end]
                 for i ∈ 1:3
+                    x_start = Vector{Real}(undef,prob.state_dim)
                     if i == 1
                         x_start = unk[N+1+j+1:N+1+j+prob.state_dim] # view(unk,N+1+j+1:N+1+j+2) #
                     else
                         x_start = X̃[prob.state_dim*(i-1)-1:prob.state_dim*(i-1)] # view(X̃,2(i-1)-1:2(i-1)) #
                     end
-                    X̃[prob.state_dim*(i-1)+1:prob.state_dim*i] = fx(unk[j+i],x_start, u(unk[N+1+prob.state_dim*M+1:end],i+j), unk[j+i+1]) # replace with view 
+                    #println("x_start                 ",typeof(x_start))
+                    tspan = (unk[j+i],unk[j+i+1])
+                    #println("tspan                   ",tspan)
+                    l = u(β,i+j)
+                    #println("l                   ",typeof(l))
+                    p = ODEProblem(f!,Vector{Float64}(x_start),tspan,l)
+                    sol = OrdinaryDiffEq.solve(p,Tsit5())
+                    X̃[prob.state_dim*(i-1)+1:prob.state_dim*i] = sol(unk[j+i+1])
+                    #X̃[prob.state_dim*(i-1)+1:prob.state_dim*i] =fx(unk[j+i], x_start, unk[j+i+1], u(β,i+j)) #   fx(0.0,x_start, 0.0, 1.0) #
                 end
             end
-        end # todo
-        for i ∈ 1:prob.state_dim*(N+1) # x /
-            c[i+offset] = 0
         end
-        for i ∈ 1:N+1 # u
+        offset = 2*(1 + prob.state_dim) + M*prob.state_dim
+        for i ∈ 1:prob.state_dim:prob.state_dim*(N+1) # x̃ᵢ 
+            c[offset+i:offset+i+prob.state_dim-1] = zeros(prob.state_dim)
+            push!(buff,offset+i:offset+i+prob.state_dim-1)
+        end
+        for i ∈ 1:prob.control_dim:prob.control_dim*(N+1) # u
             if i == N+1
-                c[i+offset+2(N+1)] = unk[(N+1)+2*M+i-1]#U[end]
+                c[offset+prob.state_dim*(N+1)+i:offset+prob.state_dim*(N+1)+i+prob.control_dim-1] = [u(β, i-1)]#unk[(N+1)+prob.state_dim*M+i-1]#U[end]
+                push!(buff,offset+prob.state_dim*(N+1)+i:offset+prob.state_dim*(N+1)+i+prob.control_dim-1)
             else
-                c[i+offset+2(N+1)] = unk[(N+1)+2*M+i]#U[i]
+                c[offset+prob.state_dim*(N+1)+i:offset+prob.state_dim*(N+1)+i+prob.control_dim-1] = [u(β, i)]#unk[(N+1)+prob.state_dim*M+i]#U[i]
+                push!(buff,offset+prob.state_dim*(N+1)+i:offset+prob.state_dim*(N+1)+i+prob.control_dim-1)
             end
         end
         c[1] = unk[1]
-        c[2:3] = view(unk, (N+1)+1:(N+1)+2)
+        c[2:3] = view(unk, (N+1)+1:(N+1)+prob.state_dim)
         c[4] = unk[N+1]
-        c[5:6] = view(unk, (N+1)+2*M-1:(N+1)+2M)
-        println(buff,c)
+        c[5:6] = view(unk, (N+1)+2*M-(prob.state_dim-1):(N+1)+2M)
+        push!(buff,1:6)
+        #println(buff)
+        #println(c)
         return c
     end
 
@@ -99,9 +121,18 @@ function solve(prob::SimpleProblem, N::Int64=9, M::Int64=N÷3) #problem without 
     adnlp = ADNLPModel!(obj_fun, unk0, l_var, u_var, con_fun, lb, ub)
     λa = [Float64(i) for i = 1:adnlp.meta.ncon]
 
-    solver_ad = IpoptSolver(adnlp)
-    ipopt_solution_ad = NLPModelsIpopt.solve!(solver_ad, adnlp, tol = 1e-12, mu_strategy="adaptive", sb="yes", print_level = 0)
+    x, fx, ngx, optimal, iter = steepest(adnlp)
+    println("x = $x")
+    println("fx = $fx")
+    println("ngx = $ngx")
+    println("optimal = $optimal")
+    println("iter = $iter")
+    #solver_ad = IpoptSolver(adnlp)
+    #ipopt_solution_ad = NLPModelsIpopt.solve!(solver_ad, adnlp, tol = 1e-12, mu_strategy="adaptive", sb="yes", print_level = 0)
     
-    return(ipopt_solution_ad)
+    return(true)
 
 end
+
+
+# ref : https://discourse.julialang.org/t/dual-forwarddiff-type-error-when-jump-tries-autodiff-user-defined-function/25639
