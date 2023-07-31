@@ -3,5 +3,5 @@ function _init_vector(N::Int, val::T, dim::Int64) where T <: Real # change to ac
     for i ∈ 1:N+1
         vec[i] = 1.0*(i-1)/N
     end
-    return Vector{Real}(vec) 
+    return vec 
 end
