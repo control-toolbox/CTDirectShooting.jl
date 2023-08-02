@@ -27,7 +27,9 @@ function test_solve()
 
         prob = SimpleProblem(g, f⁰, f, dmin, dmax, cmin, c, cmax, bmin, b, bmax, 2, 1)
 
-        solve(prob, 9, 3)
+        sol = solve(prob, 30, 3)
+
+        println(sol.solution)
     end
     
 end
