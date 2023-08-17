@@ -19,6 +19,12 @@ end
 # return a view of unknowns times 
 get_times(unk,N) = view(unk,1:N+1)
 
+# return controls 
+function get_control(unk,prob,N,M) 
+    control = [prob.l(view(unk,N+1+M*prob.state_dim+i:N+1+M*prob.state_dim+i+prob.control_dim-1)) for i in 1:prob.control_dim:N]
+    return control
+end
+
 # return a view of unknowns state on coarse grid
 get_coarse_states(unk,dim,N,M) = view(unk,N+1+1:N+1+M*dim)
 

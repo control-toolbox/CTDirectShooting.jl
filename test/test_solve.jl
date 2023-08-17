@@ -29,7 +29,7 @@ function test_solve()
 
         sol = solve(prob, 30, 3)
 
-        println(sol.solution)
+        println(sol)
     end
     
 end

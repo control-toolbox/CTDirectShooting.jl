@@ -11,6 +11,7 @@ include("utils.jl")
 include("nlp_solver.jl")
 include("init.jl")
 include("problem.jl")
+include("solution.jl")
 include("check.jl")
 include("solve.jl")
 
