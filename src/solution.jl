@@ -1,3 +1,11 @@
+"""
+$(TYPEDEF)
+
+**Fields**
+
+$(TYPEDFIELDS)
+
+"""
 struct Solution
     times::Vector{}
     state::Vector{}

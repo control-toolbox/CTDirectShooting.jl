@@ -1,3 +1,9 @@
+"""
+$(TYPEDSIGNATURES)
+
+Solve a SimpleProblem with discretisation and return the solution : 
+```(tᵢ)[0:N=I], (xⱼ)[J], (βᵢ)[0:N-1], obj, var```
+"""
 function solve(prob::SimpleProblem, N::Int64=9, M::Int64=(N + 1) ÷ 3) #problem without variable λ and only boxconstraint on control and state
 
   TYPE::DataType = Float64
@@ -19,9 +25,9 @@ function solve(prob::SimpleProblem, N::Int64=9, M::Int64=(N + 1) ÷ 3) #problem 
 
   M = size(J, 1)
 
-  # unknowns are (tᵢ)[0:N=I], (xⱼ)[J], (βᵢ)[0:N-1], obj, var)  := unk
+  # unknowns are (tᵢ)[0:N=I], (xⱼ)[J], (βᵢ)[0:N-1], obj, var  := unk
   function obj_fun(unk::Array{T}) where {T<:Real}
-    return unk[N+1] #+ norm(get_times(unk,N).-get_times_uniform(prob,N)) # obj + tᵢ constraints #unk[N+1+prob.state_dim*M+prob.control_dim*N+1] + norm(get_times(unk,N).-get_times_uniform(prob,N)) # obj + tᵢ constraints
+    return unk[N+1+prob.state_dim*M+prob.control_dim*N+1] #+ norm(get_times(unk,N).-get_times_uniform(prob,N)) # obj + tᵢ constraints #unk[N+1+prob.state_dim*M+prob.control_dim*N+1] + norm(get_times(unk,N).-get_times_uniform(prob,N)) # obj + tᵢ constraints
   end
 
   dim_unk = N + 1 + prob.state_dim * M + prob.control_dim * N + 1 + 0 # tᵢ + xⱼ + βᵢ + F + λ
@@ -102,15 +108,15 @@ function solve(prob::SimpleProblem, N::Int64=9, M::Int64=(N + 1) ÷ 3) #problem 
             x_start = X̃[prob.state_dim*(i-1)-1:prob.state_dim*(i-1)] # view(X̃,2(i-1)-1:2(i-1)) #
           end
           #println("x_start                 ",typeof(x_start))
-          tspan = (unk[j+i], unk[j+i+1])
-          #println("tspan                   ",tspan)
-          l = u(β, i + j)
+          # tspan = (unk[j+i], unk[j+i+1])
+          # #println("tspan                   ",tspan)
+          # l = u(β, i + j)
           #println("l                   ",typeof(l))
-          p = ODEProblem(prob.f!, x_start, tspan, l)
-          sol = OrdinaryDiffEq.solve(p, Tsit5())
-          X̃[prob.state_dim*(i-1)+1:prob.state_dim*i] = sol(unk[j+i+1])
+          # p = ODEProblem(prob.f!, x_start, tspan, l)
+          # sol = OrdinaryDiffEq.solve(p, Tsit5())
+          #X̃[prob.state_dim*(i-1)+1:prob.state_dim*i] = sol(unk[j+i+1])
           #println(sol(unk[j+i+1]))
-          #X̃[prob.state_dim*(i-1)+1:prob.state_dim*i] =fx(unk[j+i], x_start, unk[j+i+1], u(β,i+j)) #   fx(0.0,x_start, 0.0, 1.0) #
+          X̃[prob.state_dim*(i-1)+1:prob.state_dim*i] = fx(unk[j+i], x_start, unk[j+i+1], u(β,i+j)) #   fx(0.0,x_start, 0.0, 1.0) #
         end
         c[offset+M*prob.state_dim+(k-1)*(3+1)*prob.state_dim+1:offset+M*prob.state_dim+k*(3+1)*prob.state_dim] = [unk[N+1+prob.state_dim*(k-1)+1:N+1+prob.state_dim*k]; X̃] # x̃ᵢ
       end
@@ -120,12 +126,20 @@ function solve(prob::SimpleProblem, N::Int64=9, M::Int64=(N + 1) ÷ 3) #problem 
     #     c[offset+i:offset+i+prob.state_dim-1] = zeros(prob.state_dim)
     #     push!(buff,offset+i:offset+i+prob.state_dim-1)
     # end
+    lagrange_cost = 0.0
     for i ∈ 1:prob.control_dim:prob.control_dim*(N+1) # u
       if i == N + 1
         c[offset+prob.state_dim*(N+1)+i:offset+prob.state_dim*(N+1)+i+prob.control_dim-1] = [u(β, i - 1)]#unk[(N+1)+prob.state_dim*M+i-1]#U[end]
         push!(buff, offset+prob.state_dim*(N+1)+i:offset+prob.state_dim*(N+1)+i+prob.control_dim-1)
       else
         c[offset+prob.state_dim*(N+1)+i:offset+prob.state_dim*(N+1)+i+prob.control_dim-1] = [u(β, i)]#unk[(N+1)+prob.state_dim*M+i]#U[i]
+        function f⁰(t)
+          ind = time_to_index(get_times(unk,N),t)
+          res = prob.f⁰(t,c[offset+(ind-1)*prob.state_dim+1:offset+ind*prob.state_dim],u(β, ind))
+          return res
+        end
+        f⁰x = Flow((t, _) -> f⁰(t), autonomous=false, variable=false)
+        #lagrange_cost += f⁰x((unk[i], unk[i+1]), 0).u[end]
         push!(buff, offset+prob.state_dim*(N+1)+i:offset+prob.state_dim*(N+1)+i+prob.control_dim-1)
       end
     end
@@ -136,7 +150,8 @@ function solve(prob::SimpleProblem, N::Int64=9, M::Int64=(N + 1) ÷ 3) #problem 
     c[2:3] = view(unk, (N+1)+1:(N+1)+prob.state_dim)
     c[4] = unk[N+1]
     c[5:6] = view(unk, (N+1)+2*M-(prob.state_dim-1):(N+1)+2M)
-    c[end] = prob.g(unk[1], unk[N+2:N+3], unk[N+1], unk[N+1+(M-1)*prob.state_dim+1:N+1+M*prob.state_dim]) - unk[end]
+    mayer_cost = prob.g(unk[1], unk[N+2:N+3], unk[N+1], unk[N+1+(M-1)*prob.state_dim+1:N+1+M*prob.state_dim])
+    c[end] = mayer_cost+lagrange_cost - unk[end]
 
     push!(buff, 1:6)
     #println(buff)

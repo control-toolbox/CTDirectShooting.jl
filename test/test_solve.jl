@@ -9,13 +9,6 @@ function test_solve()
         g(t0, x0, tf, xf) = tf
         f⁰(t, x, u) = 0.0
         f(t, x, u) = [x[2];u]
-        # function f(t,x::AbstractVector{T},u) where {T <: Real}
-        #     ẋ = Vector{T}(undef, size(x,1))
-        #     println("                                                  ",typeof(ẋ))
-        #     ẋ[1] = x[2]
-        #     ẋ[2] = u
-        #     return ẋ
-        # end
         dmin = [-Inf, -Inf, -γ]
         dmax = [Inf, Inf, γ]
         cmin = [0.0]

@@ -1,3 +1,15 @@
+"""
+[`CTDirectShooting`](@ref) module.
+
+Lists all the imported modules and packages:
+
+$(IMPORTS)
+
+List of all the exported names:
+
+$(EXPORTS)
+
+"""
 module CTDirectShooting
 
 using LinearAlgebra
@@ -6,6 +18,7 @@ using ADNLPModels
 using NLPModelsIpopt
 using OrdinaryDiffEq
 using NLPModels
+using DocStringExtensions
 
 include("utils.jl")
 include("nlp_solver.jl")

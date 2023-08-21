@@ -1,6 +1,14 @@
 # --------------------------------------------------------------------------------------------------
 # make a simple ocp model
 # direct simple shooting
+"""
+$(TYPEDEF)
+
+**Fields**
+
+$(TYPEDFIELDS)
+
+"""
 struct SimpleProblem
   g::Function # mayer cost function
   f⁰::Function # langrange cost function
@@ -37,6 +45,14 @@ struct SimpleProblem
   end
 end
 
+"""
+$(TYPEDEF)
+
+**Fields**
+
+$(TYPEDFIELDS)
+
+"""
 struct BoundaryFreedom
   t0::Bool
   x0::Bool

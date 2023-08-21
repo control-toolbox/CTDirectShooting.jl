@@ -1,10 +1,28 @@
 # range same as : but return i if i:i
+"""
+$(TYPEDSIGNATURES)
+
+range same as : but return i if i:i
+
+"""
 rg(i,j) = i == j ? i : i:j
 
 # return the element i of size l in a vector
+"""
+$(TYPEDSIGNATURES)
+
+return the element i of size l in a vector
+
+"""
 get_element(v,i,l) = view(v,(l*(i-1) + 1):l*i)
 
 # return a vector of uniform times between t0 and tf 
+"""
+$(TYPEDSIGNATURES)
+
+return a vector of uniform times between t0 and tf 
+
+"""
 function get_times_uniform(prob,N) # case t0 fixed
     boundary_freedom = BoundaryFreedom(prob)
     if boundary_freedom.tf 
@@ -17,16 +35,57 @@ function get_times_uniform(prob,N) # case t0 fixed
 end
 
 # return a view of unknowns times 
+"""
+$(TYPEDSIGNATURES)
+
+return a view of unknowns times 
+
+"""
 get_times(unk,N) = view(unk,1:N+1)
 
 # return controls 
+"""
+$(TYPEDSIGNATURES)
+
+return controls
+
+"""
 function get_control(unk,prob,N,M) 
     control = [prob.l(view(unk,N+1+M*prob.state_dim+i:N+1+M*prob.state_dim+i+prob.control_dim-1)) for i in 1:prob.control_dim:N]
     return control
 end
 
 # return a view of unknowns state on coarse grid
+"""
+$(TYPEDSIGNATURES)
+
+return a view of unknowns state on coarse grid 
+
+"""
 get_coarse_states(unk,dim,N,M) = view(unk,N+1+1:N+1+M*dim)
 
 # return a view of unknowns parameters β 
+"""
+$(TYPEDSIGNATURES)
+
+return a view of unknowns parameters β 
+
+"""
 get_parameters(unk,dim1,dim2,N,M) = view(unk,N+1+dim1*M+1:N+1+dim1*M+dim2*N)
+
+# return the index associated to a time
+"""
+$(TYPEDSIGNATURES)
+
+return the index associated to a time
+
+"""
+function time_to_index(times,t)
+    for i in size(times,1)-1
+        if times[i] ≤ t < times[i+1]
+            return i
+        else t ≤ times[i+1]
+            return i+1
+        end
+    end
+end
