@@ -14,10 +14,9 @@ function test_problem()
     cmin = []
     c(t, x, u) = nothing
     cmax = []
-    bmin = [0, -1, 0, 0, 0, 0]
-    b(t0, x0, tf, xf) = [t0, x0, tf, xf]
-    bmax = [0, -1, 0, Inf, 0, 0]
-
+    bmin = [0.0, 0.0, -1.0, 0.0, 0.0, 0.0]
+    b(t0, x0, tf, xf) = [t0; x0; tf; xf]
+    bmax = [0.0, Inf, -1.0, 0.0, 0.0, 0.0]
     prob = SimpleProblem(g, f⁰, f, dmin, dmax, cmin, c, cmax, bmin, b, bmax, 2, 1)
 
     @testset "model" begin

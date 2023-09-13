@@ -19,6 +19,8 @@ using NLPModelsIpopt
 using OrdinaryDiffEq
 using NLPModels
 using DocStringExtensions
+using CTBase
+using StaticArrays
 
 include("utils.jl")
 include("nlp_solver.jl")

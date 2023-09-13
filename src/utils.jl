@@ -23,15 +23,8 @@ $(TYPEDSIGNATURES)
 return a vector of uniform times between t0 and tf 
 
 """
-function get_times_uniform(prob,N) # case t0 fixed
-    boundary_freedom = BoundaryFreedom(prob)
-    if boundary_freedom.tf 
-        t0 = prob.bmin[1]
-        tf = t0 + 1
-    else
-        t0, tf = prob.bmin[1], prob.bmin[3] 
-    end
-    return [t0*(N-i)/N + i/N*tf for i ∈ 0:N]
+function get_times_uniform(N,t0,tf) # case t0 fixed
+    return [(t0*(N+1-i)+tf*(i-1))/N for i ∈ 1:N+1]
 end
 
 # return a view of unknowns times 
@@ -44,16 +37,40 @@ return a view of unknowns times
 get_times(unk,N) = view(unk,1:N+1)
 
 # return controls 
+# """
+# $(TYPEDSIGNATURES)
+
+# return controls
+
+# """
+# function get_control(unk,prob::SimpleProblem,N,M) 
+#     control = [prob.l(view(unk,N+1+M*prob.state_dim+i:N+1+M*prob.state_dim+i+prob.control_dim-1)) for i in 1:prob.control_dim:N]
+#     return control
+# end
+
 """
 $(TYPEDSIGNATURES)
 
 return controls
 
 """
-function get_control(unk,prob,N,M) 
-    control = [prob.l(view(unk,N+1+M*prob.state_dim+i:N+1+M*prob.state_dim+i+prob.control_dim-1)) for i in 1:prob.control_dim:N]
+function get_control(unk,ocp::OptimalControlModel,N,M) 
+    control = [view(unk,N+1+M*ocp.state_dimension+i:N+1+M*ocp.state_dimension+i+ocp.control_dimension-1) for i in 1:ocp.control_dimension:N]
     return control
 end
+
+
+"""
+$(TYPEDSIGNATURES)
+
+return controls
+
+"""
+function get_variable(unk,ocp::OptimalControlModel,parameter_dimension,N,M) 
+    variable = unk[rg(N+1 + M*ocp.state_dimension + N*parameter_dimension + 1,N+1 + M*ocp.state_dimension + N*parameter_dimension + ocp.variable_dimension)]
+    return variable
+end
+
 
 # return a view of unknowns state on coarse grid
 """
@@ -89,3 +106,42 @@ function time_to_index(times,t)
         end
     end
 end
+
+function OCP_To_SimpleProblem(ocp::OptimalControlModel)
+    zero_fun(;kwargs) = zero(eltype(kwargs))
+    g = isnothing(ocp.mayer) ? zero_fun : ocp.mayer
+    f⁰ = isnothing(ocp.lagrange) ?  zero_fun : ocp.langrange
+    f = ocp.dynamics
+    function f!(dx, x, u, t)
+      for i in range(1,size(x,1))
+        dx[i] = f(t, x, u)[i]
+      end
+    end
+    state_dim = ocp.state_dimension
+    control_dim = ocp.control_dimension
+    (ξl, ξ, ξu), (ηl, η, ηu), (ψl, ψ, ψu), (ϕl, ϕ, ϕu), (θl, θ, θu), (ul, uind, uu), (xl, xind, xu), (vl, vind, vu) = nlp_constraints(ocp)
+
+    b(t0,tf,x0,xf) = [t0,tf,ϕ(x0,xf)]
+    bmin = fill(-Inf,6)
+    bmax = fill(Inf,6)
+    CTBase.__is_initial_time_free(ocp) ? nothing : bmin[1] = ocp.initial_time
+    CTBase.__is_final_time_free(ocp) ? nothing : bmin[2] = ocp.final_time
+    bmin[3:end] = ϕl
+    CTBase.__is_initial_time_free(ocp) ? nothing : bmax[1] = ocp.initial_time
+    CTBase.__is_final_time_free(ocp) ? nothing : bmax[2] = ocp.final_time
+    bmax[3:end] = ϕu
+
+    d = [xind;uind]
+    dmin = [xl;ul]
+    dmax = [xu;uu]
+
+    c = [η,ξ,ψ]
+    cmin = [ηl,ξl,ψl]
+    cmax = [ηu,ξu,ψu]
+
+    l = β -> β
+    # dmin = Vector{eltype(ocp.initial_time)}(-Inf,4)
+    # dmin[]
+
+    return SimpleProblem(g::Any, f⁰::Any, f::Any, f!::Any, dmin::Vector{}, dmax::Vector{}, cmin::Vector{}, c::Any, cmax::Vector{}, bmin::Vector{}, b::Any, bmax::Vector{}, state_dim::Int64, control_dim::Int64, l::Any)
+  end

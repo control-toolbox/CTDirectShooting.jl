@@ -1,5 +1,6 @@
 using CTDirectShooting
 using Test
+using CTBase
 
 # CTDirectShooting
 
