@@ -23,7 +23,6 @@ using CTBase
 using StaticArrays
 
 include("utils.jl")
-include("nlp_solver.jl")
 include("init.jl")
 include("problem.jl")
 include("solution.jl")

@@ -34,7 +34,7 @@ $(TYPEDSIGNATURES)
 return a view of unknowns times 
 
 """
-get_times(unk,N) = view(unk,1:N+1)
+get_times(unk,N,fixed_time_step) = fixed_time_step ? get_times_uniform(N,unk[1],unk[2]) : view(unk,1:N+1)
 
 # return controls 
 # """
@@ -54,8 +54,8 @@ $(TYPEDSIGNATURES)
 return controls
 
 """
-function get_control(unk,ocp::OptimalControlModel,N,M) 
-    control = [view(unk,N+1+M*ocp.state_dimension+i:N+1+M*ocp.state_dimension+i+ocp.control_dimension-1) for i in 1:ocp.control_dimension:N]
+function get_control(unk,ocp::OptimalControlModel,N,M,time_size) 
+    control = [view(unk,time_size+M*ocp.state_dimension+i:time_size+M*ocp.state_dimension+i+ocp.control_dimension-1) for i in 1:ocp.control_dimension:N]
     return control
 end
 
@@ -66,8 +66,8 @@ $(TYPEDSIGNATURES)
 return controls
 
 """
-function get_variable(unk,ocp::OptimalControlModel,parameter_dimension,N,M) 
-    variable = unk[rg(N+1 + M*ocp.state_dimension + N*parameter_dimension + 1,N+1 + M*ocp.state_dimension + N*parameter_dimension + ocp.variable_dimension)]
+function get_variable(unk,ocp::OptimalControlModel,parameter_dimension,N,M,time_size) 
+    variable = unk[rg(time_size + M*ocp.state_dimension + N*parameter_dimension + 1,time_size + M*ocp.state_dimension + N*parameter_dimension + ocp.variable_dimension)]
     return variable
 end
 
@@ -79,7 +79,7 @@ $(TYPEDSIGNATURES)
 return a view of unknowns state on coarse grid 
 
 """
-get_coarse_states(unk,dim,N,M) = view(unk,N+1+1:N+1+M*dim)
+get_coarse_states(unk,dim,N,M,time_size) = view(unk,time_size+1:time_size+M*dim)
 
 # return a view of unknowns parameters β 
 """
@@ -88,7 +88,7 @@ $(TYPEDSIGNATURES)
 return a view of unknowns parameters β 
 
 """
-get_parameters(unk,dim1,dim2,N,M) = view(unk,N+1+dim1*M+1:N+1+dim1*M+dim2*N)
+get_parameters(unk,dim1,dim2,N,M, time_size) = view(unk,time_size+dim1*M+1:time_size+dim1*M+dim2*N)
 
 # return the index associated to a time
 """
