@@ -23,7 +23,7 @@ function test_solve()
             tf → min
         end
 
-        sol = solve(ocp,30)
+        sol = solve(ocp,grid_size_fine=30)
 
         @test sol.objective ≈ 2.0 atol=1e-3
 
@@ -45,7 +45,7 @@ function test_solve()
             ∫(0.5 * u(t) ^ 2) → min
         end
         
-        sol = solve(ocp)
+        sol = solve(ocp,grid_size_fine=30,grid_size_coarse=10,fixed_time_step=true)
 
         @test sol.objective ≈ 20.0 atol=1e-3
     
@@ -72,7 +72,7 @@ function test_solve()
             ∫(0.5 * u(t) ^ 2) → min
         end
 
-        sol = solve(ocp,30)
+        sol = solve(ocp,grid_size_fine=30)
 
         @test sol.objective ≈ 6.0 atol=1e-2
     

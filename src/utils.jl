@@ -36,6 +36,15 @@ return a view of unknowns times
 """
 get_times(unk,N,fixed_time_step) = fixed_time_step ? get_times_uniform(N,unk[1],unk[2]) : view(unk,1:N+1)
 
+# return a view of unknowns times 
+"""
+$(TYPEDSIGNATURES)
+
+return a view of unknowns times 
+
+"""
+get_times(unk,ctds) = ctds.fixed_time_step ? get_times_uniform(ctds.grid_size_fine,unk[1],unk[2]) : view(unk,1:ctds.grid_size_fine+1)
+
 # return controls 
 # """
 # $(TYPEDSIGNATURES)
@@ -58,16 +67,24 @@ function get_control(unk,ocp::OptimalControlModel,N,M,time_size)
     control = [view(unk,time_size+M*ocp.state_dimension+i:time_size+M*ocp.state_dimension+i+ocp.control_dimension-1) for i in 1:ocp.control_dimension:N]
     return control
 end
+function get_control(unk,ctds) # only constant control for now
+    β = get_parameters(unk,ctds)
+    return β
+end
 
 
 """
 $(TYPEDSIGNATURES)
 
-return controls
+return variables
 
 """
 function get_variable(unk,ocp::OptimalControlModel,parameter_dimension,N,M,time_size) 
     variable = unk[rg(time_size + M*ocp.state_dimension + N*parameter_dimension + 1,time_size + M*ocp.state_dimension + N*parameter_dimension + ocp.variable_dimension)]
+    return variable
+end
+function get_variable(unk,ctds) 
+    variable = unk[rg(ctds.time_size + (ctds.grid_size_coarse+1)*ctds.ocp.state_dimension + ctds.grid_size_fine*ctds.parameter_dimension + 1,ctds.time_size + (ctds.grid_size_coarse+1)*ctds.ocp.state_dimension + ctds.grid_size_fine*ctds.parameter_dimension + ctds.ocp.variable_dimension)]
     return variable
 end
 
@@ -80,6 +97,51 @@ return a view of unknowns state on coarse grid
 
 """
 get_coarse_states(unk,dim,N,M,time_size) = view(unk,time_size+1:time_size+M*dim)
+get_coarse_states(unk,ctds) = view(unk,ctds.time_size+1:ctds.time_size+(ctds.grid_size_coarse+1)*ctds.ocp.state_dimension)
+
+"""
+$(TYPEDSIGNATURES)
+
+return a vector of states on fine grid 
+
+"""
+function get_states(unk,ctds)
+    states = zeros(0)
+    times = get_times(unk,ctds)
+    
+    k=1
+    xᵣ = ctds.ocp.state_dimension==1 ? zero(eltype(unk)) : zeros(eltype(unk),ctds.ocp.state_dimension)
+    uᵢ = ctds.ocp.control_dimension==1 ? zero(eltype(unk)) : zeros(eltype(unk),ctds.ocp.control_dimension)
+    β = get_parameters(unk,ctds)
+    γ = ctds.variable_dimension > 0 ? get_variable(unk,ctds) : Vector{eltype(unk)}()
+
+    for i ∈ 1:(ctds.grid_size_fine+1)
+        if i ∈ 1:(ctds.grid_size_fine÷ctds.grid_size_coarse):(ctds.grid_size_fine+1)
+          xᵢ = unk[rg(ctds.time_size + (k-1)*ctds.ocp.state_dimension + 1, ctds.time_size + k*ctds.ocp.state_dimension)]
+          k += 1
+        else
+          xᵢ = xᵣ
+        end
+    
+        tᵢ = times[i]
+    
+        if i < ctds.grid_size_fine+1
+          tᵢ₊₁ = times[i+1]
+          tspan = (tᵢ,tᵢ₊₁)
+          uᵢ = ctds.u_fun(β,i)
+          arg = [uᵢ;γ]
+          if ctds.ocp.state_dimension > 1
+            p_dynamics = ODEProblem(ctds.dyna!, xᵢ, tspan, arg)
+          else
+            p_dynamics = ODEProblem(ctds.dyna, xᵢ, tspan, arg)
+          end
+          sol_dynamics = OrdinaryDiffEq.solve(p_dynamics, Tsit5(), abstol=ctds.tol)
+          xᵣ = sol_dynamics(tᵢ₊₁)
+        end
+        append!(states,xᵢ)
+    end    
+    return states
+end
 
 # return a view of unknowns parameters β 
 """
@@ -89,6 +151,13 @@ return a view of unknowns parameters β
 
 """
 get_parameters(unk,dim1,dim2,N,M, time_size) = view(unk,time_size+dim1*M+1:time_size+dim1*M+dim2*N)
+"""
+$(TYPEDSIGNATURES)
+
+return a view of unknowns parameters β 
+
+"""
+get_parameters(unk,ctds) = view(unk,ctds.time_size+ctds.ocp.state_dimension*(ctds.grid_size_coarse+1)+1:ctds.time_size+ctds.ocp.state_dimension*(ctds.grid_size_coarse+1)+ctds.parameter_dimension*ctds.grid_size_fine)
 
 # return the index associated to a time
 """
@@ -107,41 +176,31 @@ function time_to_index(times,t)
     end
 end
 
-function OCP_To_SimpleProblem(ocp::OptimalControlModel)
-    zero_fun(;kwargs) = zero(eltype(kwargs))
-    g = isnothing(ocp.mayer) ? zero_fun : ocp.mayer
-    f⁰ = isnothing(ocp.lagrange) ?  zero_fun : ocp.langrange
-    f = ocp.dynamics
-    function f!(dx, x, u, t)
-      for i in range(1,size(x,1))
-        dx[i] = f(t, x, u)[i]
-      end
+"""
+$(TYPEDSIGNATURES)
+
+return the initial guess
+
+"""
+function _initial_guess(ctds,val::T) where T<:Real
+    
+    vec = fill(val, ctds.unk_dim) 
+    if is_variable_dependent(ctds.ocp)
+        γ = get_variable(vec,ctds)
     end
-    state_dim = ocp.state_dimension
-    control_dim = ocp.control_dimension
-    (ξl, ξ, ξu), (ηl, η, ηu), (ψl, ψ, ψu), (ϕl, ϕ, ϕu), (θl, θ, θu), (ul, uind, uu), (xl, xind, xu), (vl, vind, vu) = nlp_constraints(ocp)
-
-    b(t0,tf,x0,xf) = [t0,tf,ϕ(x0,xf)]
-    bmin = fill(-Inf,6)
-    bmax = fill(Inf,6)
-    CTBase.__is_initial_time_free(ocp) ? nothing : bmin[1] = ocp.initial_time
-    CTBase.__is_final_time_free(ocp) ? nothing : bmin[2] = ocp.final_time
-    bmin[3:end] = ϕl
-    CTBase.__is_initial_time_free(ocp) ? nothing : bmax[1] = ocp.initial_time
-    CTBase.__is_final_time_free(ocp) ? nothing : bmax[2] = ocp.final_time
-    bmax[3:end] = ϕu
-
-    d = [xind;uind]
-    dmin = [xl;ul]
-    dmax = [xu;uu]
-
-    c = [η,ξ,ψ]
-    cmin = [ηl,ξl,ψl]
-    cmax = [ηu,ξu,ψu]
-
-    l = β -> β
-    # dmin = Vector{eltype(ocp.initial_time)}(-Inf,4)
-    # dmin[]
-
-    return SimpleProblem(g::Any, f⁰::Any, f::Any, f!::Any, dmin::Vector{}, dmax::Vector{}, cmin::Vector{}, c::Any, cmax::Vector{}, bmin::Vector{}, b::Any, bmax::Vector{}, state_dim::Int64, control_dim::Int64, l::Any)
-  end
+    if CTBase.__is_initial_time_free(ctds.ocp)
+        t0 = γ[ctds.ocp.initial_time] 
+    else
+        t0 = ctds.ocp.initial_time
+    end
+    if CTBase.__is_final_time_free(ctds.ocp)
+        tf = γ[ctds.ocp.final_time]
+    else
+        tf = ctds.ocp.final_time
+    end
+    for i ∈ 1:(ctds.time_size)
+        vec[i] = (t0*(ctds.time_size-i)+tf*(i-1))/(ctds.time_size-1)
+        # add other inits
+    end
+    return vec 
+end

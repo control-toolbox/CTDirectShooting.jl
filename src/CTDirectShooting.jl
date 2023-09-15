@@ -22,6 +22,7 @@ using DocStringExtensions
 using CTBase
 using StaticArrays
 
+include("default.jl")
 include("utils.jl")
 include("init.jl")
 include("problem.jl")
@@ -29,6 +30,6 @@ include("solution.jl")
 include("check.jl")
 include("solve.jl")
 
-export SimpleProblem, solve
+export solve
 
 end

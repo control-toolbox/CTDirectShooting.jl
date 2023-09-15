@@ -23,6 +23,6 @@ B = [ 0
     tf → min
 end
 
-sol = solve(ocp,30,fixed_time_step=true)
+sol = solve(ocp,grid_size_fine=30,grid_size_coarse=10,fixed_time_step=true)
 
 println(sol)

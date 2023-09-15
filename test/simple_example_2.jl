@@ -16,6 +16,6 @@ x0 = 0
     ∫(0.5 * u(t) ^ 2) → min
 end
 
-sol = solve(ocp,9,fixed_time_step=true)
+sol = solve(ocp,grid_size_fine=30,grid_size_coarse=10,fixed_time_step=true)
 
 println(sol)
